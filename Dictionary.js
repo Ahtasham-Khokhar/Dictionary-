@@ -1,33 +1,62 @@
-const btn= document.getElementById("btn");
+const btn = document.getElementById("btn");
+const result = document.getElementById("result");
+const input = document.getElementById("inputt");
 const url = "https://api.dictionaryapi.dev/api/v2/entries/en/";
-const result= document.getElementById("result");
-const sound = document.getElementById("Sound");
- btn.addEventListener("click",()=>
- { 
-    result.classList.remove("fade");
-    const inputdata= document.getElementById("inputt").value
-    fetch(`${url}${inputdata}`)
-    .then((store)=>
-    store.json()).then((data)=>{
-    console.log(data)
-    result.innerHTML=` 
-     <div id="sample">
-     <h3>${inputdata}</h3>
-     <p id="Sound" onclick="play_sound()"><i class="fa-solid fa-volume-high"></i></p>   
- </div>
-<div id="below_Sample"> 
-<p>${data[0].meanings[0].partOfSpeech}</p> 
-<p> ${data[0].phonetic}</p>
-</div>
-<div id="details">  ${data[0].meanings[0].definitions[0].definition}</div>
-<div id="more_Details"><p> ${data[0].meanings[0].definitions[0].example ||" "}</p></div>
-     `}).catch(()=>{
-        result.innerHTML=`<h3 class="error" >The word that you <br> have<br>search is not Found</h3>`
-    })
-    result.classList.add("fade");
-     sound.setAttribute("src",`https: ${data[0].phonetics[0].audio}`);
-        })
 
-function play_sound(){
-    sound.play();
+const dictionaryAudio = new Audio();
+
+async function searchWord() {
+    const word = input.value.trim();
+    if (!word) return;
+
+    result.innerHTML = `<div class="placeholder-text"><i class="fa-solid fa-spinner fa-spin"></i><p>Fetching knowledge...</p></div>`;
+
+    try {
+        const response = await fetch(`${url}${word}`);
+        const data = await response.json();
+
+        if (!response.ok) throw new Error("Not found");
+
+        const definition = data[0].meanings[0].definitions[0];
+        const audioUrl = data[0].phonetics.find(p => p.audio)?.audio;
+
+        result.innerHTML = `
+            <div class="fade-in">
+                <div class="result-header">
+                    <h2 class="word-title">${data[0].word}</h2>
+                    <button class="audio-btn" id="play-audio" ${audioUrl ? "" : "disabled"}>
+                        <i class="fa-solid fa-volume-high"></i>
+                    </button>
+                </div>
+                <div class="meta-info">
+                    <span class="pos-badge">${data[0].meanings[0].partOfSpeech}</span>
+                    <span class="phonetic">${data[0].phonetic || ""}</span>
+                </div>
+                <p class="definition">${definition.definition}</p>
+                ${definition.example ? `
+                    <div class="example-box">
+                        <p>"${definition.example}"</p>
+                    </div>
+                ` : ""}
+            </div>
+        `;
+
+        if (audioUrl) {
+            dictionaryAudio.src = audioUrl;
+            document.getElementById("play-audio").onclick = () => dictionaryAudio.play();
+        }
+
+    } catch (error) {
+        result.innerHTML = `
+            <div class="error fade-in">
+                <h3 style="color: #f87171; text-align: center; margin-top: 20px;">Word not found</h3>
+                <p style="color: var(--text-muted); text-align: center;">Try checking your spelling or search another term.</p>
+            </div>
+        `;
+    }
 }
+
+btn.addEventListener("click", searchWord);
+input.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") searchWord();
+});
