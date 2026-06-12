@@ -32,6 +32,7 @@ body {
     max-width: 650px;
     background: var(--card-bg);
     backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--glass-border);
     margin-top: 5vh;
     padding: 2rem;
